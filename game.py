@@ -1,89 +1,104 @@
-import tkinter as tk
+import pygame
 import random
 import time
+import sys
+
+class Button:
+    def __init__(self, text, pos, callback):
+        self.text = text
+        self.pos = pos
+        self.callback = callback
+        self.font = pygame.font.Font(None, 36)
+        self.rendered_text = self.font.render(self.text, True, (255, 255, 255))
+        self.rect = self.rendered_text.get_rect(center=self.pos)
+
+    def draw(self, screen):
+        screen.blit(self.rendered_text, self.rect)
+
+    def is_clicked(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                self.callback()
 
 class ReactionGame:
-    def __init__(self, root, back_to_menu_callback):
-        self.root = root
+    def __init__(self, screen, back_to_menu_callback):
+        self.screen = screen
         self.back_to_menu_callback = back_to_menu_callback
-        self.target_key = None
-        self.keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-        self.instruction_label = tk.Label(root, text="Press the key: ")
-        self.instruction_label.pack(pady=10)
-        self.time_label = tk.Label(root, text="Time left: 0.0s")
-        self.time_label.pack(pady=10)
-        self.start_time = None
+        self.keys = [pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d, pygame.K_e, pygame.K_f, pygame.K_g]
+        self.font = pygame.font.Font(None, 36)
         self.time_limit = 2  # seconds
-        self.remaining_time = self.time_limit
         self.level = 0
         self.score = 0
         self.results = []
-        self.bind_keys()
         self.next_level()
-
-    def bind_keys(self):
-        for key in self.keys:
-            self.root.bind(f'<KeyPress-{key}>', self.check_reaction)
-
-    def unbind_keys(self):
-        for key in self.keys:
-            self.root.unbind(f'<KeyPress-{key}>')
 
     def next_level(self):
         if self.level < 4:
             self.target_key = random.choice(self.keys)
-            self.instruction_label.config(text=f"Press the key: {self.target_key}")
-            self.time_label.config(text="Time left: 0.0s")
-            self.root.after(random.randint(1000, 3000), self.enable_key_press)
+            self.start_time = time.time()
+            self.remaining_time = self.time_limit
+            self.run_level()
         else:
             self.end_game()
 
-    def enable_key_press(self):
-        self.start_time = time.time()
-        self.update_timer()
+    def run_level(self):
+        while self.remaining_time > 0:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == self.target_key:
+                        reaction_time = time.time() - self.start_time
+                        if reaction_time <= self.time_limit:
+                            self.score += 1
+                            self.results.append(f"Level {self.level + 1}: Passed")
+                        else:
+                            self.results.append(f"Level {self.level + 1}: Failed (Time out)")
+                        self.level += 1
+                        self.next_level()
+                        return
+                    else:
+                        self.results.append(f"Level {self.level + 1}: Failed (Wrong key)")
+                        self.level += 1
+                        self.next_level()
+                        return
 
-    def update_timer(self):
-        elapsed_time = time.time() - self.start_time
-        self.remaining_time = self.time_limit - elapsed_time
-        if self.remaining_time > 0:
-            self.time_label.config(text=f"Time left: {self.remaining_time:.1f}s")
-            self.root.after(100, self.update_timer)
-        else:
-            self.time_label.config(text="Time left: 0.0s")
-            self.check_reaction(None)
-
-    def check_reaction(self, event):
-        if event is not None:
-            pressed_key = event.keysym.upper()
-            if pressed_key == self.target_key:
-                reaction_time = time.time() - self.start_time
-                if reaction_time <= self.time_limit:
-                    self.score += 1
-                    self.results.append(f"Level {self.level + 1}: Passed")
-                else:
-                    self.results.append(f"Level {self.level + 1}: Failed (Time out)")
-            else:
-                self.results.append(f"Level {self.level + 1}: Failed (Wrong key)")
-        else:
-            self.results.append(f"Level {self.level + 1}: Failed (Time out)")
-        
-        self.level += 1
-        self.next_level()
+            self.remaining_time = self.time_limit - (time.time() - self.start_time)
+            self.screen.fill((0, 0, 0))
+            instruction_text = self.font.render(f"Press the key: {pygame.key.name(self.target_key).upper()}", True, (255, 255, 255))
+            time_text = self.font.render(f"Time left: {self.remaining_time:.1f}s", True, (255, 255, 255))
+            self.screen.blit(instruction_text, (100, 100))
+            self.screen.blit(time_text, (100, 200))
+            pygame.display.flip()
 
     def end_game(self):
-        self.clear_screen()
-        result_message = "\n".join(self.results)
-        result_label = tk.Label(self.root, text=f"Game Over\nYour score: {self.score}\n\nResults:\n{result_message}")
-        result_label.pack(pady=20)
-        play_again_button = tk.Button(self.root, text="Play Again", command=self.restart_game)
-        play_again_button.pack(pady=20)
-        quit_button = tk.Button(self.root, text="Quit Game", command=self.back_to_menu_callback)
-        quit_button.pack(pady=20)
+        back_button = Button("Back to Menu", (self.screen.get_width() // 2, 500), self.back_to_menu_callback)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    self.back_to_menu_callback()
+                    return
+                back_button.is_clicked(event)
 
-    def restart_game(self):
-        self.clear_screen()
-        self.__init__(self.root, self.back_to_menu_callback)
+            self.screen.fill((0, 0, 0))
+            result_message = "\n".join(self.results)
+            lines = [
+                f"Game Over",
+                f"Your score: {self.score}",
+                "",
+                "Results:",
+                result_message
+            ]
+            y = 100
+            for line in lines:
+                for subline in line.split('\n'):
+                    result_text = self.font.render(subline, True, (255, 255, 255))
+                    self.screen.blit(result_text, (100, y))
+                    y += 40  # 調整行間距
 
-    def clear_screen(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
+            back_button.draw(self.screen)
+            pygame.display.flip()
