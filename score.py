@@ -26,25 +26,27 @@ class ScoreChecker:
         self.back_button = Button("Back to Menu", (screen.get_width() // 2, 500), self.back_to_menu_callback)
         self.display_scores()
 
+    def load_score(self):
+        try:
+            with open('score_list.txt', 'r') as file:
+                return int(file.read())
+        except FileNotFoundError:
+            return 0
+
+    def save_highest_score(self):
+        with open('score_list.txt', 'w') as file:
+            file.write(str(self.highest_score))
+
+    def update_high_score(self, score):
+        if score > self.highest_score:
+            self.highest_score = score
+            self.save_highest_score()
+
     def display_scores(self):
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                self.back_button.is_clicked(event)
+        high_score_text = self.font.render(f"High Score: {self.load_score}", True, (255, 255, 255))
+        self.screen.blit(high_score_text, (10, 10))
+        pygame.display.flip()
 
-            self.screen.fill((0, 0, 0))
-            scores = [
-                "Player 1: 3",
-                "Player 2: 4",
-                "Player 3: 2"
-            ]
-            y = 100
-            for score in scores:
-                score_text = self.font.render(score, True, (255, 255, 255))
-                self.screen.blit(score_text, (100, y))
-                y += 50
-
-            self.back_button.draw(self.screen)
-            pygame.display.flip()
+def update_high_score(score):
+    score_checker = ScoreChecker(None, None)
+    score_checker.update_high_score(score)

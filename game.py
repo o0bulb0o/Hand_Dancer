@@ -72,6 +72,22 @@ class ReactionGame:
             self.screen.blit(time_text, (100, 200))
             pygame.display.flip()
 
+    def load_score_list(self):
+        try:
+            with open('./score/score_list.txt', 'r') as file:
+                return file.read()
+        except FileNotFoundError:
+            return "No scores yet"
+    
+    def update_score_list(self):
+        highest_score = self.load_score_list()
+        print(highest_score)
+        if self.score > int(highest_score):
+            with open('./score/score_list.txt', 'w') as file:
+                file.write(str(self.score))
+            # print("New high score!")
+        # print(f"Current Score: {self.score}")
+
     def end_game(self):
         back_button = Button("Back to Menu", (self.screen.get_width() // 2, 500), self.back_to_menu_callback)
         while True:
@@ -99,6 +115,8 @@ class ReactionGame:
                     result_text = self.font.render(subline, True, (255, 255, 255))
                     self.screen.blit(result_text, (100, y))
                     y += 40  # 調整行間距
+
+            self.update_score_list()     #send the score to score.py
 
             back_button.draw(self.screen)
             pygame.display.flip()
