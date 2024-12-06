@@ -24,100 +24,147 @@ class ReactionGame:
     def __init__(self, screen, back_to_menu_callback):
         self.screen = screen
         self.back_to_menu_callback = back_to_menu_callback
-        self.keys = [pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d, pygame.K_e, pygame.K_f, pygame.K_g]
+        self.levels = {
+            "Level 1": [pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d],
+            "Level 2": [pygame.K_d, pygame.K_c, pygame.K_b, pygame.K_a]
+        }
         self.font = pygame.font.Font(None, 36)
         self.time_limit = 2  # seconds
-        self.level = 0
+        self.current_round = 0
         self.score = 0
         self.results = []
-        self.next_level()
+        self.selected_level = None
+        self.sequence = []
+        self.buttons = []
+        self.create_buttons()
+        screen = pygame.display.set_mode((800, 600))
+        self.run()
 
-    def next_level(self):
-        if self.level < 4:
-            self.target_key = random.choice(self.keys)
+    def create_buttons(self):
+        y = 100
+        for level in self.levels:
+            button = Button(level, (self.screen.get_width() // 2, y), lambda l=level: self.start_level(l))
+            self.buttons.append(button)
+            y += 60
+        back_button = Button("Back to Menu", (self.screen.get_width() // 2, y), self.back_to_menu_callback)
+        self.buttons.append(back_button)
+
+    def select_level(self):
+        self.screen.fill((0, 0, 0))  # bg color
+        for button in self.buttons:
+            button.draw(self.screen)
+        pygame.display.flip()
+
+        selecting = True
+        while selecting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    for button in self.buttons:
+                        button.is_clicked(event)
+
+    def start_level(self, level):       
+        self.selected_level = level
+        self.sequence = self.levels[self.selected_level]
+        print(f"Starting {self.selected_level}")
+        self.current_round = 0
+        self.start_time = pygame.time.get_ticks()
+        self.next_round()
+
+    def next_round(self):
+        if self.current_round < len(self.sequence):
+            self.target_key = self.sequence[self.current_round]
             self.start_time = time.time()
             self.remaining_time = self.time_limit
-            self.run_level()
+            self.run_round()
         else:
             self.end_game()
+    
+    def run_round(self):
+        running = True
+        while running:
+            self.screen.fill((0, 0, 0))
+            current_time = time.time()
+            if current_time - self.start_time > self.time_limit:
+                print("Time's up!")
+                running = False
+                self.end_game()
+                break
 
-    def run_level(self):
-        while self.remaining_time > 0:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+                    running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == self.target_key:
-                        reaction_time = time.time() - self.start_time
-                        if reaction_time <= self.time_limit:
-                            self.score += 1
-                            self.results.append(f"Level {self.level + 1}: Passed")
-                        else:
-                            self.results.append(f"Level {self.level + 1}: Failed (Time out)")
-                        self.level += 1
-                        self.next_level()
-                        return
+                        self.current_round += 1
+                        self.start_time = time.time()  # reset timer
+                        if self.current_round >= len(self.sequence):
+                            print("Level completed!")
+                            running = False
+                            self.end_game()
+                            break
                     else:
-                        self.results.append(f"Level {self.level + 1}: Failed (Wrong key)")
-                        self.level += 1
-                        self.next_level()
-                        return
+                        print("Wrong key!")
+                        running = False
+                        self.end_game()
+                        break
 
-            self.remaining_time = self.time_limit - (time.time() - self.start_time)
-            self.screen.fill((0, 0, 0))
-            instruction_text = self.font.render(f"Press the key: {pygame.key.name(self.target_key).upper()}", True, (255, 255, 255))
-            time_text = self.font.render(f"Time left: {self.remaining_time:.1f}s", True, (255, 255, 255))
-            self.screen.blit(instruction_text, (100, 100))
-            self.screen.blit(time_text, (100, 200))
             pygame.display.flip()
 
-    def load_score_list(self):
+    def update_score_list(self):
+        # print(f"Current Score: {self.score}")
+        current_high_score = self.load_high_score()
+        if self.score > current_high_score:
+            self.save_high_score(self.score)
+
+    def load_high_score(self):
         try:
             with open('./score/score_list.txt', 'r') as file:
-                return file.read()
+                return int(file.read())
         except FileNotFoundError:
-            return "No scores yet"
-    
-    def update_score_list(self):
-        highest_score = self.load_score_list()
-        print(highest_score)
-        if self.score > int(highest_score):
-            with open('./score/score_list.txt', 'w') as file:
-                file.write(str(self.score))
-            # print("New high score!")
-        # print(f"Current Score: {self.score}")
+            return 0
+
+    def save_high_score(self, score):
+        with open('./score/score_list.txt', 'w') as file:
+            file.write(str(score))
 
     def end_game(self):
-        back_button = Button("Back to Menu", (self.screen.get_width() // 2, 500), self.back_to_menu_callback)
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                    self.back_to_menu_callback()
-                    return
-                back_button.is_clicked(event)
+            back_button = Button("Back to Menu", (self.screen.get_width() // 2, 500), self.back_to_menu_callback)
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                        self.back_to_menu_callback()
+                        return
+                    back_button.is_clicked(event)
 
-            self.screen.fill((0, 0, 0))
-            result_message = "\n".join(self.results)
-            lines = [
-                f"Game Over",
-                f"Your score: {self.score}",
-                "",
-                "Results:",
-                result_message
-            ]
-            y = 100
-            for line in lines:
-                for subline in line.split('\n'):
-                    result_text = self.font.render(subline, True, (255, 255, 255))
-                    self.screen.blit(result_text, (100, y))
-                    y += 40  # 調整行間距
+                self.screen.fill((0, 0, 0))
+                result_message = "\n".join(self.results)
+                lines = [
+                    f"Game Over",
+                    f"Your score: {self.score}",
+                    "",
+                    "Results:",
+                    result_message
+                ]
+                y = 100
+                for line in lines:
+                    for subline in line.split('\n'):
+                        result_text = self.font.render(subline, True, (255, 255, 255))
+                        self.screen.blit(result_text, (100, y))
+                        y += 40  # 調整行間距
 
-            self.update_score_list()     #send the score to score.py
+                self.update_score_list()     #send the score to score.py
 
-            back_button.draw(self.screen)
-            pygame.display.flip()
-            #testing
+                back_button.draw(self.screen)
+                pygame.display.flip()
+
+    def back_to_menu(self):
+        pass
+
+    def run(self):
+        self.select_level()

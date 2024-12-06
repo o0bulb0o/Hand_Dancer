@@ -36,17 +36,14 @@ class ScoreChecker:
     def save_highest_score(self):
         with open('score_list.txt', 'w') as file:
             file.write(str(self.highest_score))
-
-    def update_high_score(self, score):
-        if score > self.highest_score:
-            self.highest_score = score
-            self.save_highest_score()
+    
+    def accept_new_score(score):
+        # score_checker = ScoreChecker(None, None)
+        current_high_score =load_score()
+        if score > current_high_score:
+            score_checker.update_high_score(score)
 
     def display_scores(self):
         high_score_text = self.font.render(f"High Score: {self.load_score}", True, (255, 255, 255))
         self.screen.blit(high_score_text, (10, 10))
         pygame.display.flip()
-
-def update_high_score(score):
-    score_checker = ScoreChecker(None, None)
-    score_checker.update_high_score(score)
