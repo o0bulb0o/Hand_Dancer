@@ -1,65 +1,32 @@
 import pygame
+import config
+import component
 import sys
 from game import ReactionGame
-from score import ScoreChecker
-
 
 pygame.init()
-
-# window size
-screen_width = 800
-screen_height = 600
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Main Menu")
-
-# load the background image
-background_image = pygame.image.load("./img/bg_interface.png")
-
-class Button:
-    def __init__(self, text, pos, callback):
-        self.text = text
-        self.pos = pos
-        self.callback = callback
-        self.font = pygame.font.Font(None, 36)
-        self.rendered_text = self.font.render(self.text, True, (255, 255, 255))
-        self.rect = self.rendered_text.get_rect(center=self.pos)
-
-    def draw(self, screen):
-        screen.blit(self.rendered_text, self.rect)
-
-    def is_clicked(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.rect.collidepoint(event.pos):
-                self.callback()
-
-def start_game():
-    ReactionGame(screen, main_menu)
-
-def check_score():
-    ScoreChecker(screen, main_menu)
-
-def quit_game():
-    pygame.quit()
-    sys.exit()
-
-start_button = Button("Start Game", (screen_width // 2, 200), start_game)
-score_button = Button("Check the Score", (screen_width // 2, 300), check_score)
-quit_button = Button("Quit Game", (screen_width // 2, 400), quit_game)
-
+# game object
 def main_menu():
+    def start_game():
+        ReactionGame().preparation_scene()
+        print("Game Started")
+    def quit_game():
+        pygame.quit()
+        sys.exit()
+    font = "./asset/WESTG___.ttf"
+    start_button = component.Button("Start Game", (config.screen_width // 6, 100), start_game,font)
+    quit_button = component.Button("Quit Game", (config.screen_width // 6, 300), quit_game,font)
+
+    config.screen.blit(component.background_image, (0, 0))
+    start_button.draw(config.screen)
+    quit_button.draw(config.screen)
+    pygame.display.flip()
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
             start_button.is_clicked(event)
-            score_button.is_clicked(event)
             quit_button.is_clicked(event)
 
-        screen.blit(background_image, (0, 0))
-        start_button.draw(screen)
-        score_button.draw(screen)
-        quit_button.draw(screen)
-        pygame.display.flip()       # update the display
-
-if __name__ == "__main__":
-    main_menu()
+main_menu()

@@ -1,170 +1,89 @@
 import pygame
-import random
 import time
 import sys
-
-class Button:
-    def __init__(self, text, pos, callback):
-        self.text = text
-        self.pos = pos
-        self.callback = callback
-        self.font = pygame.font.Font(None, 36)
-        self.rendered_text = self.font.render(self.text, True, (255, 255, 255))
-        self.rect = self.rendered_text.get_rect(center=self.pos)
-
-    def draw(self, screen):
-        screen.blit(self.rendered_text, self.rect)
-
-    def is_clicked(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.rect.collidepoint(event.pos):
-                self.callback()
+import component
+import config
 
 class ReactionGame:
-    def __init__(self, screen, back_to_menu_callback):
-        self.screen = screen
-        self.back_to_menu_callback = back_to_menu_callback
-        self.levels = {
-            "Level 1": [pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d],
-            "Level 2": [pygame.K_d, pygame.K_c, pygame.K_b, pygame.K_a]
-        }
-        self.font = pygame.font.Font(None, 36)
-        self.time_limit = 2  # seconds
-        self.current_round = 0
-        self.score = 0
-        self.results = []
-        self.selected_level = None
-        self.sequence = []
-        self.buttons = []
-        self.create_buttons()
-        screen = pygame.display.set_mode((800, 600))
-        self.run()
 
-    def create_buttons(self):
-        y = 100
-        for level in self.levels:
-            button = Button(level, (self.screen.get_width() // 2, y), lambda l=level: self.start_level(l))
-            self.buttons.append(button)
-            y += 60
-        back_button = Button("Back to Menu", (self.screen.get_width() // 2, y), self.back_to_menu_callback)
-        self.buttons.append(back_button)
+    def __init__(self):
+        self.screen = config.screen
+        self.pointing_to = -1
+        self.sword = False
+        self.amulet = False
+        self.shield = False
+        self.eyeball = False
 
-    def select_level(self):
-        self.screen.fill((0, 0, 0))  # bg color
-        for button in self.buttons:
-            button.draw(self.screen)
+    def preparation_scene(self):
+        def quit_game():
+            pygame.quit()
+            sys.exit()
+
+        config.screen.blit(component.preparation_image, (0, 0))
         pygame.display.flip()
 
-        selecting = True
-        while selecting:
+        level1_button = component.Button("Level 1", [845,500] , self.level1)
+        level2_button = component.Button("Level 2", [760,400] , self.level2)
+        level3_button = component.Button("Level 3", [865,240] , self.level3)
+        level4_button = component.Button("Level 4", [730,90]  , self.level4)
+
+        level1_button.draw(config.screen)
+        level2_button.draw(config.screen)
+        level3_button.draw(config.screen)
+        level4_button.draw(config.screen)
+
+        while True:
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit_game()
+                elif event.type == pygame.MOUSEMOTION:
+                    x = event.pos[0]
+                    y = event.pos[1]
+                    if ( x > 800 and x < 1000 and y > 465 and y < 550):
+                        self.pointing_to = 1
+                    elif ( x > 720 and x < 800 and y > 345 and y < 450):
+                        self.pointing_to = 2
+                    elif ( x > 830 and x < 900 and y > 195 and y < 285):
+                        self.pointing_to = 3
+                    elif ( x > 700 and x < 760 and y > 50 and y < 125):
+                        self.pointing_to = 4
+                    else:
+                        self.pointing_to = -1
+
+                    if self.pointing_to == 1:
+                        pygame.draw.circle(self.screen, (255,255,255),[845,500],60,width=5)
+                    elif self.pointing_to == 2:
+                        pygame.draw.circle(self.screen, (255,255,255),[760,400],60,width=5)
+                    elif self.pointing_to == 3:
+                        pygame.draw.circle(self.screen, (255,255,255),[865,240],60,width=5)
+                    elif self.pointing_to == 4:
+                        pygame.draw.circle(self.screen, (255,255,255),[730,90],60,width=5)
+                    else:
+                        config.screen.blit(component.preparation_image, (0, 0))
+                        pygame.display.flip()
+                level1_button.is_clicked(event)
+                level2_button.is_clicked(event)
+                level3_button.is_clicked(event)
+                level4_button.is_clicked(event)
+                    
+            pygame.display.update()
+
+    def level1(self):
+        print("Level 1")
+        config.screen.blit(component.level1_image, (0, 0))
+        pygame.display.flip()
+
+        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    for button in self.buttons:
-                        button.is_clicked(event)
+            pygame.display.update()
 
-    def start_level(self, level):       
-        self.selected_level = level
-        self.sequence = self.levels[self.selected_level]
-        print(f"Starting {self.selected_level}")
-        self.current_round = 0
-        self.start_time = pygame.time.get_ticks()
-        self.next_round()
-
-    def next_round(self):
-        if self.current_round < len(self.sequence):
-            self.target_key = self.sequence[self.current_round]
-            self.start_time = time.time()
-            self.remaining_time = self.time_limit
-            self.run_round()
-        else:
-            self.end_game()
-    
-    def run_round(self):
-        running = True
-        while running:
-            self.screen.fill((0, 0, 0))
-            current_time = time.time()
-            if current_time - self.start_time > self.time_limit:
-                print("Time's up!")
-                running = False
-                self.end_game()
-                break
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == self.target_key:
-                        self.current_round += 1
-                        self.start_time = time.time()  # reset timer
-                        if self.current_round >= len(self.sequence):
-                            print("Level completed!")
-                            running = False
-                            self.end_game()
-                            break
-                    else:
-                        print("Wrong key!")
-                        running = False
-                        self.end_game()
-                        break
-
-            pygame.display.flip()
-
-    def update_score_list(self):
-        # print(f"Current Score: {self.score}")
-        current_high_score = self.load_high_score()
-        if self.score > current_high_score:
-            self.save_high_score(self.score)
-
-    def load_high_score(self):
-        try:
-            with open('./score/score_list.txt', 'r') as file:
-                return int(file.read())
-        except FileNotFoundError:
-            return 0
-
-    def save_high_score(self, score):
-        with open('./score/score_list.txt', 'w') as file:
-            file.write(str(score))
-
-    def end_game(self):
-            back_button = Button("Back to Menu", (self.screen.get_width() // 2, 500), self.back_to_menu_callback)
-            while True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                        self.back_to_menu_callback()
-                        return
-                    back_button.is_clicked(event)
-
-                self.screen.fill((0, 0, 0))
-                result_message = "\n".join(self.results)
-                lines = [
-                    f"Game Over",
-                    f"Your score: {self.score}",
-                    "",
-                    "Results:",
-                    result_message
-                ]
-                y = 100
-                for line in lines:
-                    for subline in line.split('\n'):
-                        result_text = self.font.render(subline, True, (255, 255, 255))
-                        self.screen.blit(result_text, (100, y))
-                        y += 40  # 調整行間距
-
-                self.update_score_list()     #send the score to score.py
-
-                back_button.draw(self.screen)
-                pygame.display.flip()
-
-    def back_to_menu(self):
-        pass
-
-    def run(self):
-        self.select_level()
+    def level2(self):
+        print("Level 2")
+    def level3(self):
+        print("Level 3")
+    def level4(self):
+        print("Level 4")
