@@ -5,6 +5,7 @@ import sys
 from game import ReactionGame
 
 pygame.init()
+
 # game object
 def main_menu():
     def start_game():

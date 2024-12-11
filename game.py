@@ -9,10 +9,21 @@ class ReactionGame:
     def __init__(self):
         self.screen = config.screen
         self.pointing_to = -1
-        self.sword = False
+        self.sword = True
         self.amulet = False
         self.shield = False
         self.eyeball = False
+
+    SetHealth = pygame.event.custom_type()
+    SetGesture = pygame.event.custom_type()
+
+    def set_health(self, health):
+        health_event = pygame.event.Event(self.SetHealth, health = health)
+        pygame.event.post(health_event)
+    
+    def set_gesture(self, gesture):
+        gesture_event = pygame.event.Event(self.SetGesture, gesture = gesture)
+        pygame.event.post(gesture_event)
 
     def preparation_scene(self):
         def quit_game():
@@ -71,14 +82,68 @@ class ReactionGame:
 
     def level1(self):
         print("Level 1")
-        config.screen.blit(component.level1_image, (0, 0))
-        pygame.display.flip()
+
+        self.health = 5
+        self.gesture = "None"
+        self.objects = []
+        self.spawn_times = [item[1] * 1000 for item in config.Level1Recipe]  # Convert seconds to milliseconds
+        self.spawn_index = 0
+        self.enemy_health = 5
+
+        def updateVisual():
+            config.screen.blit(component.level1_image, (550, 0))
+            component.HealthStatusBar().draw(config.screen, self.health)
+            component.GestureStatusBar().draw(config.screen, self.gesture)
+            component.EnemyHealthStatusBar().draw(config.screen, self.enemy_health)
+            component.TuneBoard().draw(config.screen)
+            for obj in self.objects:
+                obj.draw(config.screen)
+            pygame.display.flip()
+
+        last_update_time = pygame.time.get_ticks()
 
         while True:
+            current_time = pygame.time.get_ticks()
+            if current_time - last_update_time > config.Level1UpdateFreq:
+                for obj in self.objects:
+                    obj.move(1)
+                    if obj.rect.y > 830:
+                        self.objects.remove(obj)
+                        if obj.__class__.__name__ == "Sword":
+                            if self.gesture == "Sword":
+                                self.enemy_health -= 1
+                            else:
+                                self.health -= 1
+                        elif obj.__class__.__name__ == "Fist":
+                            if self.gesture == "Fist":
+                                self.enemy_health -= 1
+                            else:
+                                self.health -= 1
+                last_update_time = current_time
+
+            if self.spawn_index < len(self.spawn_times) and current_time >= self.spawn_times[self.spawn_index]:
+                item = config.Level1Recipe[self.spawn_index]
+                if item[0] == "sword":
+                    self.objects.append(component.Sword((300, 0)))
+                elif item[0] == "fist":
+                    self.objects.append(component.Fist((300, 0)))
+                self.spawn_index += 1
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == pygame.MOUSEMOTION:
+                    x = event.pos[0]
+                    y = event.pos[1]
+                    print(x, y)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_s:
+                        self.gesture = "Sword"
+                    if event.key == pygame.K_f:
+                        self.gesture = "Fist"
+
+            updateVisual()
             pygame.display.update()
 
     def level2(self):
