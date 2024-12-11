@@ -3,7 +3,7 @@ import time
 import sys
 import component
 import config
-from hand_tracker import HandTracker  # Import the HandTracker class
+from Simple_Hand_Tracker import run_hand_tracker  # Import the hand tracker function
 
 class ReactionGame:
 
@@ -23,10 +23,10 @@ class ReactionGame:
         config.screen.blit(component.preparation_image, (0, 0))
         pygame.display.flip()
 
-        level1_button = component.Button("Level 1", [845, 500], self.level1)
-        level2_button = component.Button("Level 2", [760, 400], self.level2)
-        level3_button = component.Button("Level 3", [865, 240], self.level3)
-        level4_button = component.Button("Level 4", [730, 90], self.level4)
+        level1_button = component.Button("Level 1", [845,500] , self.level1)
+        level2_button = component.Button("Level 2", [760,400] , self.level2)
+        level3_button = component.Button("Level 3", [865,240] , self.level3)
+        level4_button = component.Button("Level 4", [730,90]  , self.level4)
 
         level1_button.draw(config.screen)
         level2_button.draw(config.screen)
@@ -34,43 +34,40 @@ class ReactionGame:
         level4_button.draw(config.screen)
 
         while True:
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     quit_game()
                 elif event.type == pygame.MOUSEMOTION:
                     x = event.pos[0]
                     y = event.pos[1]
-                    if 800 < x < 1000 and 465 < y < 550:
+                    if ( x > 800 and x < 1000 and y > 465 and y < 550):
                         self.pointing_to = 1
-                    elif 720 < x < 800 and 345 < y < 450:
+                    elif ( x > 720 and x < 800 and y > 345 and y < 450):
                         self.pointing_to = 2
-                    elif 830 < x < 900 and 195 < y < 285:
+                    elif ( x > 830 and x < 900 and y > 195 and y < 285):
                         self.pointing_to = 3
-                    elif 700 < x < 760 and 50 < y < 125:
+                    elif ( x > 700 and x < 760 and y > 50 and y < 125):
                         self.pointing_to = 4
                     else:
                         self.pointing_to = -1
 
-                    config.screen.blit(component.preparation_image, (0, 0))
-                    level1_button.draw(config.screen)
-                    level2_button.draw(config.screen)
-                    level3_button.draw(config.screen)
-                    level4_button.draw(config.screen)
-
                     if self.pointing_to == 1:
-                        pygame.draw.circle(self.screen, (255, 255, 255), [845, 500], 60, 5)
+                        pygame.draw.circle(self.screen, (255,255,255),[845,500],60,width=5)
                     elif self.pointing_to == 2:
-                        pygame.draw.circle(self.screen, (255, 255, 255), [760, 400], 60, 5)
+                        pygame.draw.circle(self.screen, (255,255,255),[760,400],60,width=5)
                     elif self.pointing_to == 3:
-                        pygame.draw.circle(self.screen, (255, 255, 255), [865, 240], 60, 5)
+                        pygame.draw.circle(self.screen, (255,255,255),[865,240],60,width=5)
                     elif self.pointing_to == 4:
-                        pygame.draw.circle(self.screen, (255, 255, 255), [730, 90], 60, 5)
-
+                        pygame.draw.circle(self.screen, (255,255,255),[730,90],60,width=5)
+                    else:
+                        config.screen.blit(component.preparation_image, (0, 0))
+                        pygame.display.flip()
                 level1_button.is_clicked(event)
                 level2_button.is_clicked(event)
                 level3_button.is_clicked(event)
                 level4_button.is_clicked(event)
-
+                    
             pygame.display.update()
 
     def level1(self):
@@ -78,16 +75,14 @@ class ReactionGame:
         config.screen.blit(component.level1_image, (0, 0))
         pygame.display.flip()
 
-        hand_tracker = HandTracker()  # Initialize the hand tracker
+        # Initialize the hand tracker
+        run_hand_tracker()
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    hand_tracker.release()  # Release the hand tracker resources
                     pygame.quit()
                     sys.exit()
-            if not hand_tracker.process_frame():  # Process the frame and check if 'q' is pressed
-                break
             pygame.display.update()
 
     def level2(self):
