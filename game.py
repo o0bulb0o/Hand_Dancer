@@ -83,12 +83,14 @@ class ReactionGame:
     def level1(self):
         print("Level 1")
 
-        self.health = 5
-        self.gesture = "None"
-        self.objects = []
-        self.spawn_times = [item[1] * 1000 for item in config.Level1Recipe]  # Convert seconds to milliseconds
-        self.spawn_index = 0
-        self.enemy_health = 5
+        def init():
+            self.health = 5
+            self.gesture = "None"
+            self.objects = []
+            self.spawn_times = [item[1] * 1000 for item in config.Level1Recipe]  # Convert seconds to milliseconds
+            self.spawn_index = 0
+            self.enemy_health = 10
+            self.level_start_time = pygame.time.get_ticks()  # Record the start time of the level
 
         def updateVisual():
             config.screen.blit(component.level1_image, (550, 0))
@@ -100,7 +102,22 @@ class ReactionGame:
                 obj.draw(config.screen)
             pygame.display.flip()
 
-        last_update_time = pygame.time.get_ticks()
+        def checkwin():
+            if self.health <= 0:
+                print("You lose")
+                self.spawn_index = 0
+                self.objects = []
+                self.preparation_scene()
+            if self.enemy_health <= 0:
+                print("You win !")
+                print(" You have unlocked the amulet ")
+                self.amulet = True
+                self.spawn_index = 0
+                self.objects = []
+                self.preparation_scene()
+
+        init()
+        last_update_time = pygame.time.get_ticks()  # Reset last update time when the level starts
 
         while True:
             current_time = pygame.time.get_ticks()
@@ -119,24 +136,23 @@ class ReactionGame:
                                 self.enemy_health -= 1
                             else:
                                 self.health -= 1
+                        checkwin()
                 last_update_time = current_time
 
-            if self.spawn_index < len(self.spawn_times) and current_time >= self.spawn_times[self.spawn_index]:
+            if self.spawn_index < len(self.spawn_times) and current_time - self.level_start_time >= self.spawn_times[self.spawn_index]:
                 item = config.Level1Recipe[self.spawn_index]
                 if item[0] == "sword":
                     self.objects.append(component.Sword((300, 0)))
+                    print("Sword")
                 elif item[0] == "fist":
                     self.objects.append(component.Fist((300, 0)))
+                    print("Fist")
                 self.spawn_index += 1
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.MOUSEMOTION:
-                    x = event.pos[0]
-                    y = event.pos[1]
-                    print(x, y)
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_s:
                         self.gesture = "Sword"
