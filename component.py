@@ -83,6 +83,38 @@ class Sword:
     def move(self, dy):
         self.rect.y += dy
 
+class Shield:
+    def __init__(self, pos):
+        self.image = pygame.image.load("./img/shield.png")
+        self.image = pygame.transform.scale(self.image, (100, 100))
+        self.rect = self.image.get_rect(center=pos)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def move(self, dy):
+        self.rect.y += dy
+
+class ok:
+    def __init__(self, pos):
+        self.image = pygame.image.load("./img/ok.png")
+        self.image = pygame.transform.scale(self.image, (100, 100))
+        self.rect = self.image.get_rect(center=pos)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def move(self, dy):
+        self.rect.y += dy
+
+class Enemy:
+    def __init__(self, position=(550,100)):
+        self.image = pygame.image.load('./img/enemy.png')
+        self.rect = self.image.get_rect(topleft=position)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
 background_image = pygame.image.load("./img/OpenMenuBg.jpg")
 background_image = pygame.transform.scale(background_image, (config.screen_width, config.screen_height))
 preparation_image = pygame.image.load("./img/PreparationSceneBG.png")
