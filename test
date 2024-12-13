@@ -1,0 +1,26 @@
+        # recognize the gesture here!!
+        if (self.hand_mark [4].x * 640 < self.hand_mark [5].x * 640 and
+            self.hand_mark [8].y > self.hand_mark [5].y and
+            self.hand_mark [12].y > self.hand_mark [9].y and
+            self.hand_mark [16].y > self.hand_mark [13].y):
+            print("Fist gesture detected")
+        
+        # OK gesture
+        if (abs(self.hand_mark [4].x - self.hand_mark [8].x) < 0.05 and
+            abs(self.hand_mark [4].y - self.hand_mark [8].y) < 0.05 and
+            self.hand_mark [12].y < self.hand_mark [9].y and
+            self.hand_mark [16].y < self.hand_mark [13].y):
+            print("OK gesture detected")
+        
+        # Palm gesture
+        if (self.hand_mark [4].x > self.hand_mark [2].x and
+            self.hand_mark [8].y < self.hand_mark [7].y and
+            self.hand_mark [12].y < self.hand_mark [11].y and
+            self.hand_mark [16].y < self.hand_mark [15].y):
+            print("Palm gesture detected")
+        
+        # Pointing gesture
+        if (self.hand_mark [8].y < self.hand_mark [7].y and
+            self.hand_mark [12].y > self.hand_mark [9].y and
+            self.hand_mark [16].y > self.hand_mark [13].y):
+            print("Pointing gesture detected")
